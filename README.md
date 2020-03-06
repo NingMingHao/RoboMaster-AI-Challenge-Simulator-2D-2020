@@ -16,7 +16,7 @@
 
 RoboMaster AI Challenge Simulator 2D，简称`RMAICS`，是为参加 [ICRA 2019 RoboMaster AI Challenge](https://www.robomaster.com/zh-CN/resource/pages/980?type=announcementSub) 设计的模拟器，主要作用是为智能决策组训练神经网络提供仿真环境
 
-![demo](./demo.mov)
+![demo](./demo.gif)
 
 游戏帧率在200fps左右（1秒迭代200次）
 
