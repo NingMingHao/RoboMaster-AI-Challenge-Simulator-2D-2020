@@ -67,7 +67,7 @@ class state(object):
 |12|wheel_hit|int|0~|轮子撞墙的次数|
 |13|armor_hit|int|0~|装甲板撞墙的次数|
 |14|car_hit|int|0~|轮子或装甲板撞车的次数|
-||time_since_last_attacked|Int|0~|距离最近一次被击中的时间|
+|15|time_since_last_attacked|Int|0~|距离最近一次被击中的时间|
 
 [0] 以车的起始角落为原点，并使地图的全部落在正半轴
 
