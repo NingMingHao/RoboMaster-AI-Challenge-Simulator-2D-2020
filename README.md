@@ -11,6 +11,7 @@
 * 删除了agent的freeze_time, is_supply, stay_time属性，actions的supply属性
 * 增加了agents的punish_time, punish_state, last_attacked_armor, time_since_last_attacked属性
 * 将compet改为buff_info
+* **增加了 ROS 接口**
 
 ==========================================
 
@@ -61,5 +62,5 @@ numpy
 
 ## TODO
 
-加入ros接口
+* 进一步优化ros接口
 

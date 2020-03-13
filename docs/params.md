@@ -60,7 +60,7 @@ class state(object):
 |5|heat|int|0~|枪口热度|
 |6|hp|int|0~2000|血量|
 |7|punish_time|int|0~2000|禁止移动/禁止射击剩余时间[2]，需10s|
-|8|is_supply|Int|0~2|0：未收到惩罚，1：禁止射击，2：禁止移动|
+|8|punish_state|Int|0~2|0：未受到惩罚，1：禁止射击，2：禁止移动|
 |9|can_shoot|bool|0~1|决策频率高于出弹最高频率（10Hz）|
 |10|bullet|int|0~|剩余子弹量|
 |11|last_attacked_armor|int|0~4|最近1s内收到攻击的装甲板编号；0:前，1:右，2:后，3:左，4:无|

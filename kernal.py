@@ -341,7 +341,20 @@ class kernal(object):
             if not self.epoch % 10:
                 self.orders_to_acts()
             self.one_epoch()
-        return state(self.time, self.cars, self.buff_info, self.time <= 0, self.detect, self.vision)
+        return state(self.time, self.cars, self.buff_info, self.is_game_done(), self.detect, self.vision)
+    
+    def is_game_done(self):
+        time_done = (self.time <= 0)
+        if self.car_num > 2:
+            is_blue_done = ( (self.cars[0,6]<=0) and (self.cars[2,6]<=0) )
+        else:
+            is_blue_done = (self.cars[0,6]<=0)
+        if self.car_num > 3:
+            is_red_done = ( (self.cars[1,6]<=0) and (self.cars[3,6]<=0) )
+        else:
+            is_red_done = (self.cars[1,6]<=0)
+        game_done = (time_done or is_blue_done or is_red_done)
+        return game_done
     
     def step_simple_control(self, simple_orders):
         ### simple orders consist of only x,y,rotate speeds and auto_aim
@@ -350,10 +363,10 @@ class kernal(object):
                 for n in range(self.car_num):
                     self.acts[n, 2] = simple_orders[n, 0] / 2  ###change unit from m/s to pixel/epoch
                     self.acts[n, 3] = simple_orders[n, 1] / 2
-                    self.acts[n, 0] = simple_orders[n, 2]
+                    self.acts[n, 0] = simple_orders[n, 2] / 200 ###change unit from deg/s to deg/epoch
                     self.acts[n, 6] = simple_orders[n, 3] ###auto aim and shoot
             self.one_epoch()
-        return state(self.time, self.cars, self.buff_info, self.time <= 0, self.detect, self.vision)
+        return state(self.time, self.cars, self.buff_info, self.is_game_done(), self.detect, self.vision)
 
     def one_epoch(self):
         for n in range(self.car_num):
