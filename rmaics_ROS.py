@@ -89,7 +89,7 @@ class rmaics(object):
         self.bullet_status_pubs_ = [rospy.Publisher(ns+'/'+'BulletVacant', BulletVacant, queue_size=1) for ns in self.ns_names]
         
         rospy.on_shutdown(self.save_record_h) ###save game before shut down
-        rospy.spin()
+        
         
     def save_record_h(self):
         self.game.save_record(self.file_name)
@@ -130,7 +130,6 @@ class rmaics(object):
             
     def publish_every_thing(self, state):
         ### state(time, self.cars, buff_info, time <= 0, detect, vision)
-        state = self.game.step_simple_control(None)
         time, cars, buff_info, done, detect, vision = state.time, state.agents, state.buff, state.done, state.detect, state.vision
         
         # 2019
@@ -303,8 +302,14 @@ class rmaics(object):
         self.file_name = save_file_name
         self.ns_names = ['blue1', 'red1', 'blue2', 'red2'] ### {0:'blue1', 1:'red1', 2:'blue2', 3:'red2'}
         self.new_cmds = np.zeros((4, 4))
-        self.new_cmd_mask = [False, False, False, False]
         self.init_pub_and_sub()
+        # self.new_cmd_mask = [False, False, False, False]
+        
+        ### send a msg when game starts
+        self.new_cmd_mask = [True, True, True, True]
+        self.check_and_step()
+        
+        rospy.spin()
         
         
         
@@ -312,7 +317,7 @@ if __name__ == '__main__':
     import time
     # save_file_name = './records/record1.npy'
     save_file_name = './records/%d.npy'%int(time.time())
-    game = rmaics(agent_num=4, render=False)
+    game = rmaics(agent_num=4, render=True)
     game.reset()
     # only when render = True
     print('Start ROS simulation')
