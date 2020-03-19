@@ -2,7 +2,7 @@
 
 ## 基本介绍
 
-* 启动仿真只需运行  `python rmaics_ROS.py`或`python rmaics_ROS_fb.py`（强制发送比赛状态信息， rostopic pub /force_broadcast std_msgs /Int16 1 -r 10        #-r 后边的数字决定强制发送比赛状态信息的频率）
+* 启动仿真只需运行  `python rmaics_ROS.py`或`python rmaics_ROS_fb.py`（强制发送比赛状态信息， rostopic pub /force_broadcast std_msgs/Int16 1 -r 10        #-r 后边的数字决定强制发送比赛状态信息的频率）
 * 为提高仿真速度，仿真过程中默认不渲染，等比赛结束后可进行回放
 * 仿真节点名称为： **Simulator_node**
 * 不同机器人对应的命名域：**['blue1', 'red1', 'blue2', 'red2']**

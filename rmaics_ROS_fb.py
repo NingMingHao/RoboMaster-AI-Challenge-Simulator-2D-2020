@@ -21,8 +21,9 @@ import numpy as np
 
 
 class rmaics(object):
-    def __init__(self, agent_num, render=True):
+    def __init__(self, agent_num, control_agent_num = 1, render=True):
         self.car_num = agent_num
+        self.control_agent_num = control_agent_num
         self.game = kernal(car_num=agent_num, render=render)
         self.g_map = self.game.get_map()
         self.memory = []
@@ -127,7 +128,7 @@ class rmaics(object):
             rospy.signal_shutdown('Game end') ###shut down ros node
         
     def check_and_step(self):
-        if sum(self.new_cmd_mask[:self.car_num]) == self.car_num:
+        if sum(self.new_cmd_mask[:self.car_num]) == self.control_agent_num:
             self.step_ros(self.new_cmds)
             for i in range(self.car_num):
                 self.new_cmd_mask[i] = False
@@ -307,10 +308,11 @@ class rmaics(object):
         self.ns_names = ['blue1', 'red1', 'blue2', 'red2'] ### {0:'blue1', 1:'red1', 2:'blue2', 3:'red2'}
         self.new_cmds = np.zeros((4, 4))
         self.init_pub_and_sub()
-        # self.new_cmd_mask = [False, False, False, False]
         
         ### send a msg when game starts
-        self.new_cmd_mask = [True, True, True, True]
+        self.new_cmd_mask = [True, False, False, False]
+        for i in range(self.control_agent_num):
+            self.new_cmd_mask[i] = True
         self.check_and_step()
         
         rospy.spin()
@@ -321,7 +323,7 @@ if __name__ == '__main__':
     import time
     # save_file_name = './records/record1.npy'
     save_file_name = './records/%d.npy'%int(time.time())
-    game = rmaics(agent_num=4, render=True)
+    game = rmaics(agent_num=4, control_agent_num=1, render=True)
     game.reset()
     # only when render = True
     print('Start ROS simulation')
