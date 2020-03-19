@@ -322,7 +322,7 @@ class kernal(object):
                          [1, 50, 398, 0, 0, 0, 2000, 0, 0, 1, 0, 4, 0, 0, 0, 0],
                          [0, 758, 50, 180, 0, 0, 2000, 0, 0, 1, 0, 4, 0, 0, 0, 0]], dtype='float32')
         self.cars = cars[0:self.car_num]
-        return state(self.time, self.cars, self.buff_info, self.time <= 0)
+        return state(self.time, self.cars, self.buff_info, self.time <= 0, self.detect, self.vision)
 
     def play(self):
         # human play mode, only when render == True
