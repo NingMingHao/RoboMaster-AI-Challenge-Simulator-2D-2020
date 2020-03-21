@@ -99,7 +99,7 @@ class record_player(object):
         self.info_bar_img = pygame.image.load('./imgs/info_bar.png')
         self.bullet_rect = self.bullet_img.get_rect()
         self.info_bar_rect = self.info_bar_img.get_rect()
-        self.info_bar_rect.center = [200, self.map_width/2]
+        self.info_bar_rect.center = [200, self.map_width/2.0]
         pygame.font.init()
         self.font = pygame.font.SysFont('info', 20)
         self.clock = pygame.time.Clock()
@@ -211,21 +211,22 @@ class record_player(object):
         return [np.matmul(x, rotate_matrix) + car[1:3] for x in xs]
 
 class kernal(object):
-    def __init__(self, car_num, render=False, record=True):
+    def __init__(self, car_num, render=False, record=True, update_display_every_n_epoch=1):
         self.car_num = car_num
         self.render = render
+        self.update_display_every_n_epoch = update_display_every_n_epoch
         # below are params that can be challenged depended on situation
         self.bullet_speed = 9 ###18m/s
         self.motion = 6
         self.rotate_motion = 4
         self.yaw_motion = 1
-        self.camera_angle = 75 / 2
-        self.lidar_angle = 120 / 2
+        self.camera_angle = 75 / 2.0
+        self.lidar_angle = 120 / 2.0
         self.move_discount = 0.6
         # above are params that can be challenged depended on situation
         self.map_length = 808
         self.map_width = 448
-        self.theta = np.rad2deg(np.arctan(45/60))
+        self.theta = np.rad2deg(np.arctan(45/60.0))
         self.record=record
         self.start_areas = np.array([[[708.0, 808.0, 0.0, 100.0], ###red start area
                                 [708.0, 808.0, 348.0, 448.0]],
@@ -287,7 +288,7 @@ class kernal(object):
             self.info_bar_img = pygame.image.load('./imgs/info_bar.png')
             self.bullet_rect = self.bullet_img.get_rect()
             self.info_bar_rect = self.info_bar_img.get_rect()
-            self.info_bar_rect.center = [200, self.map_width/2]
+            self.info_bar_rect.center = [200, self.map_width/2.0]
             pygame.font.init()
             self.font = pygame.font.SysFont('info', 20)
             self.clock = pygame.time.Clock()
@@ -322,6 +323,8 @@ class kernal(object):
                          [1, 50, 398, 0, 0, 0, 2000, 0, 0, 1, 0, 4, 0, 0, 0, 0],
                          [0, 758, 50, 180, 0, 0, 2000, 0, 0, 1, 0, 4, 0, 0, 0, 0]], dtype='float32')
         self.cars = cars[0:self.car_num]
+        if self.render:
+            self.update_display()
         return state(self.time, self.cars, self.buff_info, self.time <= 0, self.detect, self.vision)
 
     def play(self):
@@ -361,9 +364,9 @@ class kernal(object):
         for _ in range(10):
             if not self.epoch % 10:
                 for n in range(self.car_num):
-                    self.acts[n, 2] = simple_orders[n, 0] / 2  ###change unit from m/s to pixel/epoch
-                    self.acts[n, 3] = simple_orders[n, 1] / 2
-                    self.acts[n, 0] = simple_orders[n, 2] / 200 ###change unit from deg/s to deg/epoch
+                    self.acts[n, 2] = simple_orders[n, 0] / 2.0  ###change unit from m/s to pixel/epoch
+                    self.acts[n, 3] = simple_orders[n, 1] / 2.0
+                    self.acts[n, 0] = simple_orders[n, 2] / 200.0 ###change unit from deg/s to deg/epoch
                     self.acts[n, 6] = simple_orders[n, 3] ###auto aim and shoot
             self.one_epoch()
         return state(self.time, self.cars, self.buff_info, self.is_game_done(), self.detect, self.vision)
@@ -405,7 +408,9 @@ class kernal(object):
         for i in range(len(self.bullets)):
             bullets.append(bullet(self.bullets[i].center, self.bullets[i].angle, self.bullets[i].speed, self.bullets[i].owner))
         if self.record: self.memory.append(record(self.time, self.cars.copy(), self.buff_info.copy(), self.detect.copy(), self.vision.copy(), bullets))
-        if self.render: self.update_display()
+        if self.render:
+            if self.epoch%self.update_display_every_n_epoch==0:
+                self.update_display()
 
     def move_car(self, n):
         if not self.cars[n, 8] == 2:### punish chassis movement
@@ -638,27 +643,27 @@ class kernal(object):
             if self.acts[n, 2] >= 1.5: self.acts[n, 2] = 1.5
             if self.acts[n, 2] <= -1.5: self.acts[n, 2] = -1.5
             # x, y
-            self.acts[n, 3] += self.orders[n, 1] * 1 / self.motion
+            self.acts[n, 3] += self.orders[n, 1] * 1.0 / self.motion
             if self.orders[n, 1] == 0:
-                if self.acts[n, 3] > 0: self.acts[n, 3] -= 1 / self.motion
-                if self.acts[n, 3] < 0: self.acts[n, 3] += 1 / self.motion
-            if abs(self.acts[n, 3]) < 1 / self.motion: self.acts[n, 3] = 0
+                if self.acts[n, 3] > 0: self.acts[n, 3] -= 1.0 / self.motion
+                if self.acts[n, 3] < 0: self.acts[n, 3] += 1.0 / self.motion
+            if abs(self.acts[n, 3]) < 1.0 / self.motion: self.acts[n, 3] = 0
             if self.acts[n, 3] >= 1: self.acts[n, 3] = 1
             if self.acts[n, 3] <= -1: self.acts[n, 3] = -1
             # rotate chassis
-            self.acts[n, 0] += self.orders[n, 2] * 1 / self.rotate_motion
+            self.acts[n, 0] += self.orders[n, 2] * 1.0 / self.rotate_motion
             if self.orders[n, 2] == 0:
-                if self.acts[n, 0] > 0: self.acts[n, 0] -= 1 / self.rotate_motion
-                if self.acts[n, 0] < 0: self.acts[n, 0] += 1 / self.rotate_motion
-            if abs(self.acts[n, 0]) < 1 / self.rotate_motion: self.acts[n, 0] = 0
+                if self.acts[n, 0] > 0: self.acts[n, 0] -= 1.0 / self.rotate_motion
+                if self.acts[n, 0] < 0: self.acts[n, 0] += 1.0 / self.rotate_motion
+            if abs(self.acts[n, 0]) < 1.0 / self.rotate_motion: self.acts[n, 0] = 0
             if self.acts[n, 0] > 1: self.acts[n, 0] = 1
             if self.acts[n, 0] < -1: self.acts[n, 0] = -1
             # rotate yaw
-            self.acts[n, 1] += self.orders[n, 3] / self.yaw_motion
+            self.acts[n, 1] += self.orders[n, 3] *1.0/ self.yaw_motion
             if self.orders[n, 3] == 0:
-                if self.acts[n, 1] > 0: self.acts[n, 1] -= 1 / self.yaw_motion
-                if self.acts[n, 1] < 0: self.acts[n, 1] += 1 / self.yaw_motion
-            if abs(self.acts[n, 1]) < 1 / self.yaw_motion: self.acts[n, 1] = 0
+                if self.acts[n, 1] > 0: self.acts[n, 1] -= 1.0 / self.yaw_motion
+                if self.acts[n, 1] < 0: self.acts[n, 1] += 1.0 / self.yaw_motion
+            if abs(self.acts[n, 1]) < 1.0 / self.yaw_motion: self.acts[n, 1] = 0
             if self.acts[n, 1] > 3: self.acts[n, 1] = 3
             if self.acts[n, 1] < -3: self.acts[n, 1] = -3
             self.acts[n, 4] = self.orders[n, 4]

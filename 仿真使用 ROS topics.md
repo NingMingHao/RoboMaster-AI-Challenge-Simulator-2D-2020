@@ -1,7 +1,7 @@
 # 仿真使用 ROS topics
 
 ## 基本介绍
-
+* 最新版仿真`python rmaics_ROS_auto_pub.py`进入仿真，并等待开始（或暂停）信号（`rostopic pub /start_signal std_msgs/Int16 1`，此版本会发送odom，base_link，map之间的tf（其中odom与base_link前应加上namespace/)
 * 启动仿真只需运行  `python rmaics_ROS.py`或`python rmaics_ROS_fb.py`（强制发送比赛状态信息， rostopic pub /force_broadcast std_msgs/Int16 1 -r 10        #-r 后边的数字决定强制发送比赛状态信息的频率）
 * 为提高仿真速度，仿真过程中默认不渲染，等比赛结束后可进行回放
 * 仿真节点名称为： **Simulator_node**
