@@ -233,20 +233,20 @@ class rmaics(object):
                     one_enemy_info.enemy_pos.pose.position.x = cars[enemy_ind,1]/100.0 ##pixel to meter
                     one_enemy_info.enemy_pos.pose.position.y = (448 - cars[enemy_ind,2])/100.0 ##pixel to meter
                     yaw_at_ros = -np.radians(cars[enemy_ind,3]) ## deg to radians
-                    one_enemy_info.enemy_pos.pose.orientation.w = np.cos(yaw_at_ros)
-                    one_enemy_info.enemy_pos.pose.orientation.z = np.sin(yaw_at_ros)
+                    one_enemy_info.enemy_pos.pose.orientation.w = np.cos(yaw_at_ros/2.0)
+                    one_enemy_info.enemy_pos.pose.orientation.z = np.sin(yaw_at_ros/2.0)
                     partner_info_msg.enemy_info.append(one_enemy_info)
                     
             partner_info_msg.partner_pose.pose.position.x = cars[i,1]/100.0
             partner_info_msg.partner_pose.pose.position.y = (448 - cars[i,2])/100.0
             yaw_at_ros = -np.radians(cars[i,3])
-            partner_info_msg.partner_pose.pose.orientation.w = np.cos(yaw_at_ros)
-            partner_info_msg.partner_pose.pose.orientation.z = np.sin(yaw_at_ros)
+            partner_info_msg.partner_pose.pose.orientation.w = np.cos(yaw_at_ros/2.0)
+            partner_info_msg.partner_pose.pose.orientation.z = np.sin(yaw_at_ros/2.0)
             partner_info_msg.bullet_num = cars[i,10]
             self.partner_pubs_[i].publish(partner_info_msg)
             ### send tf
             tmp_translation = [cars[i,1]/100.0, (448 - cars[i,2])/100.0, 0]
-            tmp_rotation = [0, 0, np.sin(yaw_at_ros), np.cos(yaw_at_ros)]
+            tmp_rotation = [0, 0, np.sin(yaw_at_ros/2.0), np.cos(yaw_at_ros/2.0)]
             self.br.sendTransform(tmp_translation, tmp_rotation, rospy.Time.now(), self.ns_names[i]+'/base_link', 'map')
             self.br.sendTransform([0,0,0], [0,0,0,1], rospy.Time.now(), self.ns_names[i]+'/odom', 'map')
 #            self.br.sendTransform(tmp_translation, tmp_rotation, rospy.Time.now(), self.ns_names[i]+'/base_link', self.ns_names[i]+'/odom')

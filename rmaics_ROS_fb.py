@@ -224,18 +224,18 @@ class rmaics(object):
                     partner_info_msg.enemy_detected = True
                     one_enemy_info = EnemyInfo()
                     one_enemy_info.num = 1
-                    one_enemy_info.enemy_pos.pose.position.x = cars[enemy_ind,1]/100 ##pixel to meter
-                    one_enemy_info.enemy_pos.pose.position.y = (448 - cars[enemy_ind,2])/100 ##pixel to meter
+                    one_enemy_info.enemy_pos.pose.position.x = cars[enemy_ind,1]/100.0 ##pixel to meter
+                    one_enemy_info.enemy_pos.pose.position.y = (448 - cars[enemy_ind,2])/100.0 ##pixel to meter
                     yaw_at_ros = -np.radians(cars[enemy_ind,3]) ## deg to radians
-                    one_enemy_info.enemy_pos.pose.orientation.w = np.cos(yaw_at_ros)
-                    one_enemy_info.enemy_pos.pose.orientation.z = np.sin(yaw_at_ros)
+                    one_enemy_info.enemy_pos.pose.orientation.w = np.cos(yaw_at_ros/2.0)
+                    one_enemy_info.enemy_pos.pose.orientation.z = np.sin(yaw_at_ros/2.0)
                     partner_info_msg.enemy_info.append(one_enemy_info)
                     
-            partner_info_msg.partner_pose.pose.position.x = cars[i,1]/100
-            partner_info_msg.partner_pose.pose.position.y = (448 - cars[i,2])/100
+            partner_info_msg.partner_pose.pose.position.x = cars[i,1]/100.0
+            partner_info_msg.partner_pose.pose.position.y = (448 - cars[i,2])/100.0
             yaw_at_ros = -np.radians(cars[i,3])
-            partner_info_msg.partner_pose.pose.orientation.w = np.cos(yaw_at_ros)
-            partner_info_msg.partner_pose.pose.orientation.z = np.sin(yaw_at_ros)
+            partner_info_msg.partner_pose.pose.orientation.w = np.cos(yaw_at_ros/2.0)
+            partner_info_msg.partner_pose.pose.orientation.z = np.sin(yaw_at_ros/2.0)
             
             partner_info_msg.bullet_num = cars[i,10]
             self.partner_pubs_[i].publish(partner_info_msg)
@@ -270,7 +270,7 @@ class rmaics(object):
         for i in range(self.car_num):
             robot_punish_msg = RobotPunish()
             robot_punish_msg.type = cars[i,8]
-            robot_punish_msg.remaining_time = cars[i,7]/200 ##epoch to second
+            robot_punish_msg.remaining_time = cars[i,7]/200.0 ##epoch to second
             self.robot_punish_pubs_[i].publish(robot_punish_msg)
             
         # Unuseful
