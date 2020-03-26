@@ -63,10 +63,10 @@ class rmaics(object):
         
     def init_pub_and_sub(self):
         rospy.init_node('Simulator_node')
-        self.cmd_sub_blue1 = rospy.Subscriber(self.ns_names[0]+'/'+'car_cmds', Twist, callback=self.cmd_callback_blue1, queue_size=1)###TODO
-        self.cmd_sub_red1 = rospy.Subscriber(self.ns_names[1]+'/'+'car_cmds', Twist, callback=self.cmd_callback_red1, queue_size=1)
-        self.cmd_sub_blue2 = rospy.Subscriber(self.ns_names[2]+'/'+'car_cmds', Twist, callback=self.cmd_callback_blue2, queue_size=1)
-        self.cmd_sub_red2 = rospy.Subscriber(self.ns_names[3]+'/'+'car_cmds', Twist, callback=self.cmd_callback_red2, queue_size=1)
+        self.cmd_sub_blue1 = rospy.Subscriber(self.ns_names[0]+'/'+'cmd_vel', Twist, callback=self.cmd_callback_blue1, queue_size=1)###TODO
+        self.cmd_sub_red1 = rospy.Subscriber(self.ns_names[1]+'/'+'cmd_vel', Twist, callback=self.cmd_callback_red1, queue_size=1)
+        self.cmd_sub_blue2 = rospy.Subscriber(self.ns_names[2]+'/'+'cmd_vel', Twist, callback=self.cmd_callback_blue2, queue_size=1)
+        self.cmd_sub_red2 = rospy.Subscriber(self.ns_names[3]+'/'+'cmd_vel', Twist, callback=self.cmd_callback_red2, queue_size=1)
         
         self.force_broadcast_sub = rospy.Subscriber('/force_broadcast', Int16, callback=self.force_broadcast, queue_size=1)
         ## 2019
