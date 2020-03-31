@@ -1,0 +1,24 @@
+ubuntu18（ros melodic）和ubuntu16（ros kinect）中编译时需要改动的地方
+
+× protobuf不需要自己安装，在安装ros时已经安装了
+× 需要注意anaconda中的protobuf（protoc）会和c++版的protobuf（protoc）冲突，需要在.bashrc中将usr/bin路径放在前边
+
+
+src中的改动
+× a_star_planner.cpp中对于abs无法处理unsigned int类型，要强制转换成int格式
+× escape_behavior.h中增加 #include <bits/stdc++.h>解决std不存在random_device的问题
+× teb_optimal.cpp （130行左右）
+//  knetic
+//  TebLinearSolver* linearSolver = new TebLinearSolver();
+//  linearSolver->setBlockOrdering(true);
+//  TebBlockSolver* blockSolver = new TebBlockSolver(linearSolver);
+//  g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+
+//  melodic
+  std::unique_ptr<TebLinearSolver> linearSolver(new TebLinearSolver());
+  linearSolver->setBlockOrdering(true);
+  std::unique_ptr<TebBlockSolver> blockSolver(new TebBlockSolver(std::move(linearSolver)));
+  g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(blockSolver));
+//######################################
+
+

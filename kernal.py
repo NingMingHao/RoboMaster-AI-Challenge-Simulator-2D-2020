@@ -185,7 +185,7 @@ class record_player(object):
                 self.screen.blit(info, (8+n*100, 100))
                 for i in range(self.cars[n].size):
                     if i==8:
-                        info = self.font.render('{}: {}'.format(tags[i], [' ', 'M', 'S'][int(self.cars[n, i])]), False, (0, 0, 0))
+                        info = self.font.render('{}: {}'.format(tags[i], [' ', 'S', 'M'][int(self.cars[n, i])]), False, (0, 0, 0))
                     else:
                         info = self.font.render('{}: {}'.format(tags[i], int(self.cars[n, i])), False, (0, 0, 0))
                     self.screen.blit(info, (8+n*100, 117+i*17))
@@ -374,7 +374,7 @@ class kernal(object):
     def one_epoch(self):
         for n in range(self.car_num):
             # move car one by one
-            if self.cars[n, 6]: ###hp>0
+            if self.cars[n, 6] > 0: ###hp>0
                 self.move_car(n)
                 if not self.epoch % 20:
                     if self.cars[n, 5] >= 360:
@@ -384,8 +384,10 @@ class kernal(object):
                         self.cars[n, 6] -= (self.cars[n, 5] - 240) * 4
                     self.cars[n, 5] -= 12 if self.cars[n, 6] >= 400 else 24
                 if self.cars[n, 5] <= 0: self.cars[n, 5] = 0
-                if self.cars[n, 6] <= 0: self.cars[n, 6] = 0
+#                print(self.epoch, 'car', n, self.acts[n, 5])
                 if not self.acts[n, 5]:
+#                    print(self.epoch, 'car', n, 'reset acts shoot')
+#                    print('====================================')
                     self.acts[n, 6] = 0
                     self.acts[n, 4] = 0
         if not self.epoch % 200:
@@ -407,6 +409,8 @@ class kernal(object):
         bullets = []
         for i in range(len(self.bullets)):
             bullets.append(bullet(self.bullets[i].center, self.bullets[i].angle, self.bullets[i].speed, self.bullets[i].owner))
+        for n in range(self.car_num):
+            if self.cars[n, 6] <= 0: self.cars[n, 6] = 0
         if self.record: self.memory.append(record(self.time, self.cars.copy(), self.buff_info.copy(), self.detect.copy(), self.vision.copy(), bullets))
         if self.render:
             if self.epoch%self.update_display_every_n_epoch==0:
@@ -447,7 +451,14 @@ class kernal(object):
         # print(self.acts[n, 6])
         if self.acts[n, 6]:###auto aim
             if self.car_num > 1:
-                select = np.where((self.vision[n] == 1))[0]
+                who_is_enemy = {0:[1,3], 1:[0,2], 2:[1,3], 3:[0,2]}
+                tmp_vision = self.vision[n]
+                mask_without_partner = np.zeros(self.car_num, dtype=np.uint8)
+                for enemy_ind in who_is_enemy[n]:
+                    mask_without_partner[enemy_ind] = 1
+                tmp_vision = tmp_vision * mask_without_partner
+                        
+                select = np.where((tmp_vision == 1))[0]
                 if select.size:
                     angles = np.zeros(select.size)
                     for ii, i in enumerate(select):
@@ -474,18 +485,21 @@ class kernal(object):
                     self.acts[n, 4] = 1###fire after aim
                     
         if not self.cars[n, 8] == 1:### punish shooting 
-            # fire or not
-            if self.acts[n, 4] and self.cars[n, 10]:
-                if self.cars[n, 9]:
-                    self.cars[n, 10] -= 1
-                    self.bullets.append(bullet(self.cars[n, 1:3], self.cars[n, 4]+self.cars[n, 3], self.bullet_speed, n))
-                    self.cars[n, 5] += self.bullet_speed*2
-                    self.cars[n, 9] = 0
+            if self.acts[n, 4]:
+                if self.cars[n, 10]: # fire or not
+                    if self.cars[n, 9]:
+                        self.cars[n, 10] -= 1
+                        self.bullets.append(bullet(self.cars[n, 1:3], self.cars[n, 4]+self.cars[n, 3], self.bullet_speed, n))
+#                        print('car', n, 'shoot')
+                        self.cars[n, 5] += self.bullet_speed*2
+                        self.cars[n, 9] = 0
+                        self.acts[n, 6] = 0###make sure only shoot once at most evert ten epoches.
+                        self.acts[n, 4] = 0###TODO:force single shoot
+                    else:
+                        self.cars[n, 9] = np.random.choice([0,1], p =[0.4, 0.6])  ###expected shooting rate is 10*0.7 per second
                 else:
-                    self.cars[n, 9] = np.random.choice([0,1], p =[0.3, 0.7])  ###expected shooting rate is 10*0.7 per second
-            else:
-                if not self.cars[n, 9]:
-                    self.cars[n, 9] = np.random.choice([0,1], p =[0.3, 0.7])
+                    if not self.cars[n, 9]:
+                        self.cars[n, 9] = np.random.choice([0,1], p =[0.4, 0.6])
                     
         ###update punishment state
         self.cars[n, 7] -= 1
@@ -598,7 +612,7 @@ class kernal(object):
             self.screen.blit(info, (8+n*100, 100))
             for i in range(self.cars[n].size):
                 if i==8:
-                    info = self.font.render('{}: {}'.format(tags[i], [' ', 'M', 'S'][int(self.cars[n, i])]), False, (0, 0, 0))
+                    info = self.font.render('{}: {}'.format(tags[i], [' ', 'S', 'M'][int(self.cars[n, i])]), False, (0, 0, 0))
                 else:
                     info = self.font.render('{}: {}'.format(tags[i], int(self.cars[n, i])), False, (0, 0, 0))
                 self.screen.blit(info, (8+n*100, 117+i*17))

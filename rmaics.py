@@ -41,3 +41,18 @@ class rmaics(object):
 
     def save_record(self, file):
         self.game.save_record(file)
+        
+        
+if __name__ == '__main__':
+    import time
+    # save_file_name = './records/record1.npy'
+    save_file_name = './records/%d.npy'%int(time.time())
+    game = rmaics(agent_num=4, render=True)
+    game.reset()
+    # only when render = True
+    game.play()
+    
+#    from kernal import record_player
+#    print('play saved file')
+#    player = record_player()
+#    player.play(save_file_name)

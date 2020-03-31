@@ -9,15 +9,16 @@ broadcasting tf: odom, base_link, map; #assume odom = map for convinence
 '''
 from roborts_msgs.msg import GimbalAngle, GameStatus, GameResult, GameSurvivor, BonusStatus, SupplierStatus #2-7
 from roborts_msgs.msg import RobotStatus, RobotHeat, RobotBonus, RobotDamage, RobotShoot, ProjectileSupply, EnemyInfo, PartnerInformation #8-16
-from roborts_msgs.msg import BulletVacant, BuffInfo, RobotPunish # new defined for 2020
+from roborts_msgs.msg import BulletVacant, BuffInfo, RobotPunish, EnemyInfoVector # new defined for 2020
 from geometry_msgs.msg import PoseStamped, Twist
+from nav_msgs.msg import Odometry
 from std_msgs.msg import Int16 ### recieving start signal
 import rospy
+from roslaunch.parent import ROSLaunchParent
 import tf
 
 from kernal import kernal
 import numpy as np
-
 
 
 class rmaics(object):
@@ -70,9 +71,9 @@ class rmaics(object):
         self.cmd_sub_red2 = rospy.Subscriber(self.ns_names[3]+'/'+'cmd_vel', Twist, callback=self.cmd_callback_red2, queue_size=1)
         
         self.start_signal_sub = rospy.Subscriber('/start_signal', Int16, callback=self.game_start_callback, queue_size=1)
-        rospy.Timer(rospy.Duration(1.0/self.sim_rate), self.timer_callback)
         
         self.br = tf.TransformBroadcaster()
+        self.odom_pubs_ = [rospy.Publisher(ns+'/'+'odom', Odometry, queue_size=10) for ns in self.ns_names]
         ## 2019
         self.enemy_pubs_ = [rospy.Publisher(ns+'/'+'goal', PoseStamped, queue_size=1) for ns in self.ns_names]### for cmd line use, not suitable in codes.
         self.gimbal_angle_pubs_ = [rospy.Publisher(ns+'/'+'cmd_gimbal_angle', GimbalAngle, queue_size=1) for ns in self.ns_names] ### for gimbal control
@@ -88,15 +89,24 @@ class rmaics(object):
         self.robot_shoot_pubs_ = [rospy.Publisher(ns+'/'+'robot_shoot', RobotShoot, queue_size=30) for ns in self.ns_names]
         self.projectile_supply_pubs_ = [rospy.Publisher(ns+'/'+'projectile_supply', ProjectileSupply, queue_size=1) for ns in self.ns_names]
         self.partner_pubs_ = [rospy.Publisher(ns+'/'+'partner_msg', PartnerInformation, queue_size=1) for ns in self.ns_names]
-        
+        self.enemy_info_pubs_ = [rospy.Publisher(ns+'/'+'enemy_info', EnemyInfoVector, queue_size=1) for ns in self.ns_names]
         ## 2020
         self.buff_info_pubs_ = [rospy.Publisher(ns+'/'+'BuffInfo', BuffInfo, queue_size=1) for ns in self.ns_names]
         self.robot_punish_pubs_ = [rospy.Publisher(ns+'/'+'RobotPunish', RobotPunish, queue_size=1) for ns in self.ns_names]
         self.bullet_status_pubs_ = [rospy.Publisher(ns+'/'+'BulletVacant', BulletVacant, queue_size=1) for ns in self.ns_names]
         
+        rospy.Timer(rospy.Duration(1.0/self.sim_rate), self.timer_callback)
         rospy.on_shutdown(self.save_record_h) ###save game before shut down
         
-        
+    
+    def launch_cars(self):
+        launch_file_name = '/home/parallels/Documents/University/Robomaster/Robo_bc_ws/src/roborts_bringup/launch/roborts_stage2020.launch'
+        launch_file_names_and_args = [ (launch_file_name, ['__ns:='+tmp_ns]) for tmp_ns in self.ns_names]
+        self.cars_launch_parents = ROSLaunchParent('start_from_python', launch_file_names_and_args)
+        self.cars_launch_parents.start()
+        pass
+    
+    
     def game_start_callback(self, int16_msg):
         if not self.is_game_start:
             self.is_game_start = True
@@ -108,6 +118,8 @@ class rmaics(object):
     def timer_callback(self, event):
         if self.is_game_start:
             self.step_ros(self.new_cmds)
+        else:
+            self.publish_every_thing()
         
     def save_record_h(self):
         self.game.save_record(self.file_name)
@@ -136,6 +148,8 @@ class rmaics(object):
         self.state = self.game.step_simple_control(actions)
         self.publish_every_thing()
         if self.state.done:
+            self.cars_launch_parents.shutdown()
+            self.parent.shutdown()
             rospy.signal_shutdown('Game end') ###shut down ros node
         
             
@@ -243,14 +257,46 @@ class rmaics(object):
             partner_info_msg.partner_pose.pose.orientation.w = np.cos(yaw_at_ros/2.0)
             partner_info_msg.partner_pose.pose.orientation.z = np.sin(yaw_at_ros/2.0)
             partner_info_msg.bullet_num = cars[i,10]
-            self.partner_pubs_[i].publish(partner_info_msg)
+#            self.partner_pubs_[i].publish(partner_info_msg)  ##TODO:it seems that no need to publish partner_info from simulation
+            
             ### send tf
             tmp_translation = [cars[i,1]/100.0, (448 - cars[i,2])/100.0, 0]
             tmp_rotation = [0, 0, np.sin(yaw_at_ros/2.0), np.cos(yaw_at_ros/2.0)]
-            self.br.sendTransform(tmp_translation, tmp_rotation, rospy.Time.now(), self.ns_names[i]+'/base_link', 'map')
+            
             self.br.sendTransform([0,0,0], [0,0,0,1], rospy.Time.now(), self.ns_names[i]+'/odom', 'map')
+            self.br.sendTransform(tmp_translation, tmp_rotation, rospy.Time.now(), self.ns_names[i]+'/base_footprint', self.ns_names[i]+'/odom')
+            self.br.sendTransform([0,0,0], [0,0,0,1], rospy.Time.now(), self.ns_names[i]+'/base_link', self.ns_names[i]+'/base_footprint')
+            
+            tmp_gimbal_translation = [0, 0, 0.2]
+            tmp_gimbal_rotation = [0,0,np.cos(np.radians(-cars[i,4])/2), np.sin(np.radians(-cars[i,4])/2)]
+            self.br.sendTransform(tmp_gimbal_translation, tmp_gimbal_rotation, rospy.Time.now(), self.ns_names[i]+'/gimbal', self.ns_names[i]+'/base_footprint')
+            
+            odom_msg = Odometry()
+            odom_msg.header.frame_id = self.ns_names[i] + '/odom'
+            odom_msg.pose.pose.position = partner_info_msg.partner_pose.pose.position
+            odom_msg.pose.pose.orientation = partner_info_msg.partner_pose.pose.orientation
+            odom_msg.twist.twist.linear.x = self.new_cmds[i,0]
+            odom_msg.twist.twist.linear.y = -self.new_cmds[i,1]
+            odom_msg.twist.twist.angular.z = -np.radians(self.new_cmds[i,2])
+            self.odom_pubs_[i].publish(odom_msg)
+            
 #            self.br.sendTransform(tmp_translation, tmp_rotation, rospy.Time.now(), self.ns_names[i]+'/base_link', self.ns_names[i]+'/odom')
             
+        ### send enemy_info
+        who_is_enemy = {0:[1,3], 1:[0,2], 2:[1,3], 3:[0,2]}
+        for i in range(self.car_num):
+            enemy_info_msg = EnemyInfoVector()
+            for enemy_ind in who_is_enemy[i]:
+                one_enemy_info = EnemyInfo()
+                one_enemy_info.num = 1
+                one_enemy_info.enemy_pos.header.frame_id = 'map'
+                one_enemy_info.enemy_pos.pose.position.x = cars[enemy_ind,1]/100.0 ##pixel to meter
+                one_enemy_info.enemy_pos.pose.position.y = (448 - cars[enemy_ind,2])/100.0 ##pixel to meter
+                yaw_at_ros = -np.radians(cars[enemy_ind,3]) ## deg to radians
+                one_enemy_info.enemy_pos.pose.orientation.w = np.cos(yaw_at_ros/2.0)
+                one_enemy_info.enemy_pos.pose.orientation.z = np.sin(yaw_at_ros/2.0)
+                enemy_info_msg.enemy_info.append(one_enemy_info)
+            self.enemy_info_pubs_[i].publish(enemy_info_msg)
         # 2020
         ## Bullet vacant
         for i in range(self.car_num):
@@ -314,11 +360,13 @@ class rmaics(object):
         
         
     def play_using_ros(self, save_file_name='./records/record1.npy'):
+        self.parent = ROSLaunchParent('start_from_python', [], is_core=True)     # run_id can be any string
+        self.parent.start()
         self.file_name = save_file_name
         self.ns_names = ['blue1', 'red1', 'blue2', 'red2'] ### {0:'blue1', 1:'red1', 2:'blue2', 3:'red2'}
         self.new_cmds = np.zeros((4, 4))
         self.init_pub_and_sub()
-        
+        self.launch_cars()
         rospy.spin()
         
         
