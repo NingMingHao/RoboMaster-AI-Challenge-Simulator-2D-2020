@@ -100,8 +100,11 @@ class rmaics(object):
         
     
     def launch_cars(self):
-        launch_file_name = '/home/parallels/Documents/University/Robomaster/Robo_bc_ws/src/roborts_bringup/launch/roborts_stage2020.launch'
+        launch_file_path = '/home/parallels/Documents/University/Robomaster/Robo_bc_ws/src/roborts_bringup/launch/'
+        launch_file_name = launch_file_path + 'roborts_stage2020.launch'
+        rviz_file_name = launch_file_path + 'rviz_robosim2020.launch'
         launch_file_names_and_args = [ (launch_file_name, ['__ns:='+tmp_ns]) for tmp_ns in self.ns_names]
+        launch_file_names_and_args.append( rviz_file_name )
         self.cars_launch_parents = ROSLaunchParent('start_from_python', launch_file_names_and_args)
         self.cars_launch_parents.start()
         pass
