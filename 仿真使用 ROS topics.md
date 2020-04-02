@@ -343,3 +343,18 @@
 * 补弹量 恒定发送 0
 * 直接在 [BulletVacant](#机器人子弹状态) 里边发送可用子弹数
 * 这里相当于roborts_dicision节点判断正在子弹补给区时，就让黑板发送补弹指令给到roborts_base节点，roborts_base节点再向裁判系统申请补弹。今年是有子弹加成区，可能是踩到buff区后，裁判系统就会把允许发送弹量增加了
+
+### 地方机器人信息（所有地方机器人的位置和朝向信息）
+
+* topic：enemy_info
+
+* msg type：roborts_msgs/EnemyInfoVector
+
+* 描述：与partner_info中的enemy_info相同（区别在于每次都发送所有敌方机器人的信息，而上述partner_info仅发送自己车检测到的）
+
+### tf信息
+* topic: /tf
+* 从属关系为：map > 包含namespace的odom > 包含namespace的base_footprint > (包含namespace的base_link，包含namespace的gimbal)
+* 仿真中，map和odom完全重合
+
+

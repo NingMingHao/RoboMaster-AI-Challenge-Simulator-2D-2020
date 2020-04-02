@@ -107,7 +107,7 @@ class rmaics(object):
         launch_file_names_and_args.append( rviz_file_name )
         self.cars_launch_parents = ROSLaunchParent('start_from_python', launch_file_names_and_args)
         self.cars_launch_parents.start()
-        pass
+        
     
     
     def game_start_callback(self, int16_msg):
@@ -270,7 +270,7 @@ class rmaics(object):
             self.br.sendTransform(tmp_translation, tmp_rotation, rospy.Time.now(), self.ns_names[i]+'/base_footprint', self.ns_names[i]+'/odom')
             self.br.sendTransform([0,0,0], [0,0,0,1], rospy.Time.now(), self.ns_names[i]+'/base_link', self.ns_names[i]+'/base_footprint')
             
-            tmp_gimbal_translation = [0, 0, 0.2]
+            tmp_gimbal_translation = [0, 0, 0.15]
             tmp_gimbal_rotation = [0,0,np.cos(np.radians(-cars[i,4])/2), np.sin(np.radians(-cars[i,4])/2)]
             self.br.sendTransform(tmp_gimbal_translation, tmp_gimbal_rotation, rospy.Time.now(), self.ns_names[i]+'/gimbal', self.ns_names[i]+'/base_footprint')
             
