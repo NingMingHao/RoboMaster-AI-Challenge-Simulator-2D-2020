@@ -29,6 +29,8 @@ class rmaics(object):
         self.g_map = self.game.get_map()
         self.memory = []
         self.is_game_start = False
+        self.x_shift = 0.2
+        self.y_shift = 0.2
         
     def reset(self):
         self.state = self.game.reset()
@@ -247,23 +249,23 @@ class rmaics(object):
                     partner_info_msg.enemy_detected = True
                     one_enemy_info = EnemyInfo()
                     one_enemy_info.num = 1
-                    one_enemy_info.enemy_pos.pose.position.x = cars[enemy_ind,1]/100.0 ##pixel to meter
-                    one_enemy_info.enemy_pos.pose.position.y = (448 - cars[enemy_ind,2])/100.0 ##pixel to meter
+                    one_enemy_info.enemy_pos.pose.position.x = cars[enemy_ind,1]/100.0 + self.x_shift##pixel to meter
+                    one_enemy_info.enemy_pos.pose.position.y = (448 - cars[enemy_ind,2])/100.0 + self.y_shift ##pixel to meter
                     yaw_at_ros = -np.radians(cars[enemy_ind,3]) ## deg to radians
                     one_enemy_info.enemy_pos.pose.orientation.w = np.cos(yaw_at_ros/2.0)
                     one_enemy_info.enemy_pos.pose.orientation.z = np.sin(yaw_at_ros/2.0)
                     partner_info_msg.enemy_info.append(one_enemy_info)
                     
-            partner_info_msg.partner_pose.pose.position.x = cars[i,1]/100.0
-            partner_info_msg.partner_pose.pose.position.y = (448 - cars[i,2])/100.0
+            partner_info_msg.partner_pose.pose.position.x = cars[i,1]/100.0 + self.x_shift
+            partner_info_msg.partner_pose.pose.position.y = (448 - cars[i,2])/100.0 + self.y_shift
             yaw_at_ros = -np.radians(cars[i,3])
             partner_info_msg.partner_pose.pose.orientation.w = np.cos(yaw_at_ros/2.0)
             partner_info_msg.partner_pose.pose.orientation.z = np.sin(yaw_at_ros/2.0)
             partner_info_msg.bullet_num = cars[i,10]
-#            self.partner_pubs_[i].publish(partner_info_msg)  ##TODO:it seems that no need to publish partner_info from simulation
+            self.partner_pubs_[i].publish(partner_info_msg)  ##TODO:it seems that no need to publish partner_info from simulation
             
             ### send tf
-            tmp_translation = [cars[i,1]/100.0, (448 - cars[i,2])/100.0, 0]
+            tmp_translation = [cars[i,1]/100.0 + self.x_shift, (448 - cars[i,2])/100.0 + self.y_shift, 0]
             tmp_rotation = [0, 0, np.sin(yaw_at_ros/2.0), np.cos(yaw_at_ros/2.0)]
             
             self.br.sendTransform([0,0,0], [0,0,0,1], rospy.Time.now(), self.ns_names[i]+'/odom', 'map')
@@ -293,8 +295,8 @@ class rmaics(object):
                 one_enemy_info = EnemyInfo()
                 one_enemy_info.num = 1
                 one_enemy_info.enemy_pos.header.frame_id = 'map'
-                one_enemy_info.enemy_pos.pose.position.x = cars[enemy_ind,1]/100.0 ##pixel to meter
-                one_enemy_info.enemy_pos.pose.position.y = (448 - cars[enemy_ind,2])/100.0 ##pixel to meter
+                one_enemy_info.enemy_pos.pose.position.x = cars[enemy_ind,1]/100.0 + self.x_shift ##pixel to meter
+                one_enemy_info.enemy_pos.pose.position.y = (448 - cars[enemy_ind,2])/100.0 + self.y_shift ##pixel to meter
                 yaw_at_ros = -np.radians(cars[enemy_ind,3]) ## deg to radians
                 one_enemy_info.enemy_pos.pose.orientation.w = np.cos(yaw_at_ros/2.0)
                 one_enemy_info.enemy_pos.pose.orientation.z = np.sin(yaw_at_ros/2.0)
