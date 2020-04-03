@@ -285,7 +285,7 @@ class rmaics(object):
             odom_msg.twist.twist.angular.z = -np.radians(self.new_cmds[i,2])
             self.odom_pubs_[i].publish(odom_msg)
             
-#            self.br.sendTransform(tmp_translation, tmp_rotation, rospy.Time.now(), self.ns_names[i]+'/base_link', self.ns_names[i]+'/odom')
+            self.br.sendTransform(tmp_translation, tmp_rotation, rospy.Time.now(), self.ns_names[i]+'/base_link', self.ns_names[i]+'/odom')
             
         ### send enemy_info
         who_is_enemy = {0:[1,3], 1:[0,2], 2:[1,3], 3:[0,2]}
