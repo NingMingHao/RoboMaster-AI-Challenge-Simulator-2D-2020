@@ -205,7 +205,7 @@ class rmaics(object):
                 self.game_survival_pubs_[i].publish(game_survival_msg)
                 
         ## Robot status
-        id_dict = {0:13, 1:3, 2:14, 3:13}
+        id_dict = {0:13, 1:3, 2:14, 3:4}
         for i in range(self.car_num):
             robot_status_msg = RobotStatus()
             robot_status_msg.id = id_dict[i]
