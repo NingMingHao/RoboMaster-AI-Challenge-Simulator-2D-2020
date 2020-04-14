@@ -102,7 +102,7 @@ class rmaics(object):
         
     
     def launch_cars(self):
-        launch_file_path = '/home/parallels/Documents/University/Robomaster/Robo_bc_ws/src/roborts_bringup/launch/'
+        launch_file_path = '/home/parallels/Documents/University/Robomaster/robo_2020_buff_ws/src/roborts_bringup/launch/'
         launch_file_name = launch_file_path + 'roborts_stage2020.launch'
         rviz_file_name = launch_file_path + 'rviz_robosim2020.launch'
         launch_file_names_and_args = [ (launch_file_name, ['__ns:='+tmp_ns]) for tmp_ns in self.ns_names]

@@ -216,9 +216,7 @@ class kernal(object):
         self.render = render
         self.update_display_every_n_epoch = update_display_every_n_epoch
         # below are params that can be challenged depended on situation
-        self.bullet_speed = 10 ###20m/s
-        self.bullet_rate = 6 ###6Hz
-        self.shoot_after_auto_aim = True
+        self.bullet_speed = 9 ###18m/s
         self.motion = 6
         self.rotate_motion = 4
         self.yaw_motion = 1
@@ -316,7 +314,6 @@ class kernal(object):
         self.vision = np.zeros((self.car_num, self.car_num), dtype='int8')
         self.detect = np.zeros((self.car_num, self.car_num), dtype='int8')
         self.bullets = []
-        self.last_shoot_epoch = 0
         self.epoch = 0
         self.n = 0
         self.dev = False
@@ -393,7 +390,6 @@ class kernal(object):
 #                    print('====================================')
                     self.acts[n, 6] = 0
                     self.acts[n, 4] = 0
-                    
         if not self.epoch % 200:
                 self.time -= 1
                 if not self.time % 60:
@@ -454,11 +450,57 @@ class kernal(object):
             if self.cars[n, 4] < -90: self.cars[n, 4] = -90
         # print(self.acts[n, 6])
         if self.acts[n, 6]:###auto aim
-            self.auto_aim_of_car_n(n)
-        
-        if (not self.cars[n, 8] == 1) and self.acts[n, 4]:### punish shooting or don't shoot
-            self.shoot_at_constant_rate(n)
-            
+            if self.car_num > 1:
+                who_is_enemy = {0:[1,3], 1:[0,2], 2:[1,3], 3:[0,2]}
+                tmp_vision = self.vision[n]
+                mask_without_partner = np.zeros(self.car_num, dtype=np.uint8)
+                for enemy_ind in who_is_enemy[n]:
+                    mask_without_partner[enemy_ind] = 1
+                tmp_vision = tmp_vision * mask_without_partner
+                        
+                select = np.where((tmp_vision == 1))[0]
+                if select.size:
+                    angles = np.zeros(select.size)
+                    for ii, i in enumerate(select):
+                        x, y = self.cars[i, 1:3] - self.cars[n, 1:3]
+                        angle = np.angle(x+y*1j, deg=True) - self.cars[i, 3]
+                        if angle >= 180: angle -= 360
+                        if angle <= -180: angle += 360
+                        if angle >= -self.theta and angle < self.theta:
+                            armor = self.get_armor(self.cars[i], 2)  ###back_armor
+                        elif angle >= self.theta and angle < 180-self.theta:
+                            armor = self.get_armor(self.cars[i], 3)  ###left_armor
+                        elif angle >= -180+self.theta and angle < -self.theta:
+                            armor = self.get_armor(self.cars[i], 1)  ###right_armor
+                        else: armor = self.get_armor(self.cars[i], 0) ###front_armor
+                        x, y = armor - self.cars[n, 1:3]
+                        angle = np.angle(x+y*1j, deg=True) - self.cars[n, 4] - self.cars[n, 3]
+                        if angle >= 180: angle -= 360
+                        if angle <= -180: angle += 360
+                        angles[ii] = angle
+                    m = np.where(np.abs(angles) == np.abs(angles).min())
+                    self.cars[n, 4] += angles[m][0]
+                    if self.cars[n, 4] > 90: self.cars[n, 4] = 90
+                    if self.cars[n, 4] < -90: self.cars[n, 4] = -90
+                    self.acts[n, 4] = 1###fire after aim
+                    
+        if not self.cars[n, 8] == 1:### punish shooting 
+            if self.acts[n, 4]:
+                if self.cars[n, 10]: # fire or not
+                    if self.cars[n, 9]:
+                        self.cars[n, 10] -= 1
+                        self.bullets.append(bullet(self.cars[n, 1:3], self.cars[n, 4]+self.cars[n, 3], self.bullet_speed, n))
+#                        print('car', n, 'shoot')
+                        self.cars[n, 5] += self.bullet_speed*2
+                        self.cars[n, 9] = 0
+                        self.acts[n, 6] = 0###make sure only shoot once at most evert ten epoches.
+                        self.acts[n, 4] = 0###TODO:force single shoot
+                    else:
+                        self.cars[n, 9] = np.random.choice([0,1], p =[0.4, 0.6])  ###expected shooting rate is 10*0.7 per second
+                else:
+                    if not self.cars[n, 9]:
+                        self.cars[n, 9] = np.random.choice([0,1], p =[0.4, 0.6])
+                    
         ###update punishment state
         self.cars[n, 7] -= 1
         if self.cars[n, 7] <= 0:
@@ -472,58 +514,7 @@ class kernal(object):
                 self.cars[n, 11] = 4
                 self.cars[n, 15] = 0
             
-    def auto_aim_of_car_n(self, n):
-        if self.car_num > 1:
-            who_is_enemy = {0:[1,3], 1:[0,2], 2:[1,3], 3:[0,2]}
-            tmp_vision = self.vision[n]
-            mask_without_partner_or_dead = np.zeros(self.car_num, dtype=np.uint8)
-            for enemy_ind in who_is_enemy[n]:
-                mask_without_partner_or_dead[enemy_ind] = 1 * (self.cars[enemy_ind, 6] > 0)
-            tmp_vision = tmp_vision * mask_without_partner_or_dead
-                    
-            select = np.where((tmp_vision == 1))[0]
-            if select.size:
-                angles = np.zeros(select.size)
-                for ii, i in enumerate(select):
-                    x, y = self.cars[i, 1:3] - self.cars[n, 1:3]
-                    angle = np.angle(x+y*1j, deg=True) - self.cars[i, 3]
-                    if angle >= 180: angle -= 360
-                    if angle <= -180: angle += 360
-                    if angle >= -self.theta and angle < self.theta:
-                        armor = self.get_armor(self.cars[i], 2)  ###back_armor
-                    elif angle >= self.theta and angle < 180-self.theta:
-                        armor = self.get_armor(self.cars[i], 3)  ###left_armor
-                    elif angle >= -180+self.theta and angle < -self.theta:
-                        armor = self.get_armor(self.cars[i], 1)  ###right_armor
-                    else: armor = self.get_armor(self.cars[i], 0) ###front_armor
-                    x, y = armor - self.cars[n, 1:3]
-                    angle = np.angle(x+y*1j, deg=True) - self.cars[n, 4] - self.cars[n, 3]
-                    if angle >= 180: angle -= 360
-                    if angle <= -180: angle += 360
-                    angles[ii] = angle
-                m = np.where(np.abs(angles) == np.abs(angles).min())
-                self.cars[n, 4] += angles[m][0]
-                out_gimbal_range = False
-                if self.cars[n, 4] > 90:
-                    self.cars[n, 4] = 90
-                    out_gimbal_range = True
-                if self.cars[n, 4] < -90:
-                    self.cars[n, 4] = -90
-                    out_gimbal_range = True
-                if (not out_gimbal_range) and self.shoot_after_auto_aim:
-                    self.acts[n, 4] = 1###fire after aim
-                        
-    def shoot_at_constant_rate(self, n):
-        has_past_shoot_time = (self.epoch - self.last_shoot_epoch) / 200.0
-        if has_past_shoot_time >= 1.0 / self.bullet_rate:
-            if self.cars[n, 10]: # has_bullet?
-                self.cars[n, 10] -= 1
-                self.bullets.append(bullet(self.cars[n, 1:3], self.cars[n, 4]+self.cars[n, 3], self.bullet_speed, n))
-#                        print('car', n, 'shoot')
-                self.cars[n, 5] += self.bullet_speed*2
-                self.last_shoot_epoch = self.epoch
-
-                        
+        
     def move_bullet(self, n):
         '''
         move bullet No.n, if interface with wall, barriers or cars, return True, else False
