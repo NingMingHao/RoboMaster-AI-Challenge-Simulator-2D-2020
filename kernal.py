@@ -219,6 +219,7 @@ class kernal(object):
         self.bullet_speed = 10 ###20m/s
         self.bullet_rate = 6 ###6Hz
         self.shoot_after_auto_aim = True
+        self.actual_shooting_prob = 0.5
         self.motion = 6
         self.rotate_motion = 4
         self.yaw_motion = 1
@@ -541,6 +542,7 @@ class kernal(object):
         for i in range(len(self.cars)):
             if i == self.bullets[n].owner: continue
             if np.abs(np.array(self.bullets[n].center) - np.array(self.cars[i, 1:3])).sum() < 52.5:
+                is_actual_shoot = np.random.random() <= self.actual_shooting_prob
                 points = self.transfer_to_car_coordinate(np.array([self.bullets[n].center, old_point]), i)
                 is_front = self.segment(points[0], points[1], [-5, -30], [5, -30])
                 is_left = self.segment(points[0], points[1], [-18.5, -5], [-18.5, 6])
@@ -548,18 +550,19 @@ class kernal(object):
                 is_back = self.segment(points[0], points[1], [-5, 30], [5, 30])
                 
                 if is_front or is_left or is_right or is_back:
-                    if is_back:
-                        self.cars[i, 6] -= 60
-                        self.cars[i, 11] = 2
-                    elif is_left:
-                        self.cars[i, 6] -= 40
-                        self.cars[i, 11] = 3
-                    elif is_right:
-                        self.cars[i, 6] -= 40
-                        self.cars[i, 11] = 1
-                    else:
-                        self.cars[i, 6] -= 20
-                        self.cars[i, 11] = 0
+                    if is_actual_shoot:
+                        if is_back:
+                            self.cars[i, 6] -= 60
+                            self.cars[i, 11] = 2
+                        elif is_left:
+                            self.cars[i, 6] -= 40
+                            self.cars[i, 11] = 3
+                        elif is_right:
+                            self.cars[i, 6] -= 40
+                            self.cars[i, 11] = 1
+                        else:
+                            self.cars[i, 6] -= 20
+                            self.cars[i, 11] = 0
                     return True
                 if self.line_rect_check(points[0], points[1], [-18, -29, 18, 29]): return True
         return False
@@ -710,23 +713,27 @@ class kernal(object):
                     ###TODO:car n activated buff unused_i what will happen?
                     ###hp_blue
                     if self.buff_info[unused_i, 0] == 0:
-                        self.cars[0,6] += 200
-                        if self.cars[0,6] > 2000:
-                            self.cars[0,6] = 2000
+                        if self.cars[0,6] > 0:
+                            self.cars[0,6] += 200
+                            if self.cars[0,6] > 2000:
+                                self.cars[0,6] = 2000
                         if self.car_num > 2:
-                            self.cars[2,6] += 200
-                            if self.cars[2,6] > 2000:
-                                self.cars[2,6] = 2000
+                            if self.cars[2,6] > 0:
+                                self.cars[2,6] += 200
+                                if self.cars[2,6] > 2000:
+                                    self.cars[2,6] = 2000
                     ###hp_red
                     elif self.buff_info[unused_i, 0] == 2:
                         if self.car_num > 1:
-                            self.cars[1,6] += 200
-                            if self.cars[1,6] > 2000:
-                                self.cars[1,6] = 2000
+                            if self.cars[1,6] > 0:
+                                self.cars[1,6] += 200
+                                if self.cars[1,6] > 2000:
+                                    self.cars[1,6] = 2000
                             if self.car_num > 3:
-                                self.cars[3,6] += 200
-                                if self.cars[3,6] > 2000:
-                                    self.cars[3,6] = 2000
+                                if self.cars[3,6] > 0:
+                                    self.cars[3,6] += 200
+                                    if self.cars[3,6] > 2000:
+                                        self.cars[3,6] = 2000
                     ###bullet blue
                     elif self.buff_info[unused_i, 0] == 1:
                         self.cars[0,10] += 100
